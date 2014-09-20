@@ -1,0 +1,11 @@
+FilesUtil
+=========
+
+This repository contains generic code relating to files in iOS and OS X file systems, including code to monitor directories in iOS and OS X apps and issue notifications as files are added/removed/renamed, as well as simple wrappers to common NSFileSystem calls to find and create files in an iOS app. 
+
+This code is used in several standalone apps included in my GitHub public repositories. 
+
+This code is distributed under the terms of the MIT license. See file "LICENSE" in each repository for details.
+
+Copyright (c) 2014 Steve Caine. <br>
+@SteveCaine on github.com
