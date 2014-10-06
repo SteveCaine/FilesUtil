@@ -6,7 +6,7 @@
 
 # to create:
 # 1) in Terminal, cd to the folder containing this script 
-# 2) type 'chmod -x cloneall' and hit Return to make file executable
+# 2) type 'chmod +x cloneall' and hit Return to make file executable
 # 3) copy this file to the folder where you want to clone my code
 
 # to use: 
