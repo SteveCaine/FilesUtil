@@ -11,8 +11,36 @@
 
 #import <Foundation/Foundation.h>
 
+// --------------------------------------------------
+
+typedef enum FilesUtil_SortFilesBys {
+	SortFiles_alphabeticalAscending,
+	SortFiles_alphabeticalDescending,
+	SortFiles_newestFirst,
+	SortFiles_oldestFirst
+} FilesUtil_SortFilesBy;
+
+// --------------------------------------------------
+
 @interface FilesUtil : NSObject
 
++ (double)ageOfFile:(NSString *)path error:(NSError **)error;
+
+// returns PATH if exists, else returns -nil-
++ (NSString *)documentsDirectory;
++ (NSString *)cacheDirectory;
++ (NSString *)cacheSubDirectory:(NSString *)name; // name of subfolder in cache dir
+
++ (NSUInteger) copyBundleFilesOfType:(NSString *)type   toDir:(NSString *)dirPath;
++ (NSUInteger)mergeBundleFilesOfType:(NSString *)type intoDir:(NSString *)dirPath;
+
++ (NSArray *)pathsForFilesType:(NSString *)type inDir:(NSString *)dirPath sortedBy:(FilesUtil_SortFilesBy)sortedBy;
+
++ (NSArray *)pathsForBundleFilesType:(NSString *)type sortedBy:(FilesUtil_SortFilesBy)sortedBy;
+
++ (NSArray *)namesFromPaths:(NSArray *)paths stripExtensions:(BOOL)stripYesNo;
+
+// --------------------------------------------------
 // all return path to new file
 
 + (NSString *)writeString:(NSString *)str toFile:(NSString *)name inFolder:(NSString *)path;
@@ -30,3 +58,5 @@
 */
 
 @end
+
+// --------------------------------------------------
