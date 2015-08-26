@@ -16,49 +16,7 @@
 #import "Debug_iOS.h"
 
 // --------------------------------------------------
-
-NSInteger sortFilesByThis(id lhs, id rhs, void *v) {
-	
-	FilesUtil_SortFilesBy sortFilesBy = SortFiles_alphabeticalAscending; // default
-	if (v)
-		sortFilesBy = *(FilesUtil_SortFilesBy *)v;
-	
-	NSString *lhsPath = (NSString *)lhs;
-	NSString *rhsPath = (NSString *)rhs;
-	
-	NSError *lhsError = nil;
-	NSError *rhsError = nil;
-	
-	if (sortFilesBy == SortFiles_alphabeticalAscending ||
-		sortFilesBy == SortFiles_alphabeticalDescending) {
-		
-		NSString *lhsName = [lhsPath lastPathComponent];
-		NSString *rhsName = [rhsPath lastPathComponent];
-		NSInteger result = [lhsName caseInsensitiveCompare:rhsName];
-		
-		if (sortFilesBy == SortFiles_alphabeticalAscending)
-			return result;
-		else if (sortFilesBy == SortFiles_alphabeticalDescending)
-			return -result;
-	}
-	else if (sortFilesBy == SortFiles_newestFirst ||
-			 sortFilesBy == SortFiles_oldestFirst) {
-		// TODO: handle errors
-		double lhsAge = [FilesUtil ageOfFile:lhsPath error:&lhsError];
-		double rhsAge = [FilesUtil ageOfFile:rhsPath error:&rhsError];
-		
-		if (lhsAge < rhsAge)
-			return (sortFilesBy == SortFiles_newestFirst) ? -1 : +1;
-		else
-			if (rhsAge < lhsAge)
-				return (sortFilesBy == SortFiles_newestFirst) ? +1 : -1;
-	}
-	
-	return 0;
-}
-
-// --------------------------------------------------
-#pragma mark -
+static NSInteger sortFilesByThis(id lhs, id rhs, void *v);
 // --------------------------------------------------
 
 @interface FilesUtil ()
@@ -272,5 +230,49 @@ NSInteger sortFilesByThis(id lhs, id rhs, void *v) {
 */
 
 @end
+
+// --------------------------------------------------
+#pragma mark -
+// --------------------------------------------------
+
+static NSInteger sortFilesByThis(id lhs, id rhs, void *v) {
+	
+	FilesUtil_SortFilesBy sortFilesBy = SortFiles_alphabeticalAscending; // default
+	if (v)
+		sortFilesBy = *(FilesUtil_SortFilesBy *)v;
+	
+	NSString *lhsPath = (NSString *)lhs;
+	NSString *rhsPath = (NSString *)rhs;
+	
+	NSError *lhsError = nil;
+	NSError *rhsError = nil;
+	
+	if (sortFilesBy == SortFiles_alphabeticalAscending ||
+		sortFilesBy == SortFiles_alphabeticalDescending) {
+		
+		NSString *lhsName = [lhsPath lastPathComponent];
+		NSString *rhsName = [rhsPath lastPathComponent];
+		NSInteger result = [lhsName caseInsensitiveCompare:rhsName];
+		
+		if (sortFilesBy == SortFiles_alphabeticalAscending)
+			return result;
+		else if (sortFilesBy == SortFiles_alphabeticalDescending)
+			return -result;
+	}
+	else if (sortFilesBy == SortFiles_newestFirst ||
+			 sortFilesBy == SortFiles_oldestFirst) {
+		// TODO: handle errors
+		double lhsAge = [FilesUtil ageOfFile:lhsPath error:&lhsError];
+		double rhsAge = [FilesUtil ageOfFile:rhsPath error:&rhsError];
+		
+		if (lhsAge < rhsAge)
+			return (sortFilesBy == SortFiles_newestFirst) ? -1 : +1;
+		else
+			if (rhsAge < lhsAge)
+				return (sortFilesBy == SortFiles_newestFirst) ? +1 : -1;
+	}
+	
+	return 0;
+}
 
 // --------------------------------------------------
