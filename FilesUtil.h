@@ -34,6 +34,9 @@ typedef enum FilesUtil_SortFilesBys {
 + (NSUInteger) copyBundleFilesOfType:(NSString *)type   toDir:(NSString *)dirPath;
 + (NSUInteger)mergeBundleFilesOfType:(NSString *)type intoDir:(NSString *)dirPath;
 
++ (NSUInteger)countForFilesOfType:(NSString *)type inDir:(NSString *)dirPath filter:(BOOL(^)(NSString *))filter;
++ (NSUInteger)   clearFilesOfType:(NSString *)type inDir:(NSString *)dirPath filter:(BOOL(^)(NSString *))filter;
+
 + (NSArray *)pathsForFilesType:(NSString *)type inDir:(NSString *)dirPath sortedBy:(FilesUtil_SortFilesBy)sortedBy;
 
 + (NSArray *)pathsForBundleFilesType:(NSString *)type sortedBy:(FilesUtil_SortFilesBy)sortedBy;

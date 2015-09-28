@@ -84,7 +84,7 @@ static NSInteger sortFilesByThis(id lhs, id rhs, void *v);
 	for (NSString *srcPath in filePaths) {
 		NSString *srcName = [srcPath lastPathComponent];
 		NSString *dstPath = [dirPath stringByAppendingPathComponent:srcName];
-		//		MyLog(@"copy \n'%@'\n to \n'%@'", srcPath, dstPath);
+//		MyLog(@"copy \n'%@'\n to \n'%@'", srcPath, dstPath);
 		
 		BOOL exists = [defaultManager fileExistsAtPath:dstPath];
 		if (exists && overwriteYesNo == NO)
@@ -108,22 +108,74 @@ static NSInteger sortFilesByThis(id lhs, id rhs, void *v);
 }
 
 // --------------------------------------------------
+
++ (NSUInteger)countForFilesOfType:(NSString *)type inDir:(NSString *)dirPath filter:(BOOL(^)(NSString *))filter {
+//	MyLog(@"%s '%@'", __FUNCTION__, dirPath);
+	NSUInteger result = 0;
+	
+	if (type.length && dirPath.length) {
+		BOOL isDir = NO;
+		if ([[NSFileManager defaultManager] fileExistsAtPath:dirPath isDirectory:&isDir] && isDir) {
+			NSError *error = nil;
+			NSArray* files = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:dirPath error:&error];
+			
+			if (files.count) {
+				for (NSString *file in files) {
+					if ([file.pathExtension isEqualToString:type] && (filter == nil || filter(file)))
+						++result;
+				}
+			}
+			else if (error)
+				MyLog(@"Error counting files in '%@': %@", dirPath, [error localizedDescription]);
+		}
+	}
+	return result;
+}
+
++ (NSUInteger)clearFilesOfType:(NSString *)type inDir:(NSString *)dirPath filter:(BOOL(^)(NSString *))filter {
+	NSUInteger result = 0;
+
+	if (type.length && dirPath.length) {
+		BOOL isDir = NO;
+		if ([[NSFileManager defaultManager] fileExistsAtPath:dirPath isDirectory:&isDir] && isDir) {
+			NSError *error = nil;
+			NSArray* files = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:dirPath error:&error];
+			
+			if (files.count) {
+				for (NSString *file in files) {
+					NSString *path = [NSString pathWithComponents:@[dirPath, file]];
+					if ([[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDir] && !isDir) {
+						if ([file.pathExtension isEqualToString:type] && (filter == nil || filter(file))) {
+							if ([[NSFileManager defaultManager] removeItemAtPath:path error:&error])
+								++result;
+						}
+					}
+				}
+			}
+			else if (error)
+				MyLog(@"Error clearing files in '%@': %@", dirPath, [error localizedDescription]);
+		}
+	}
+	return result;
+}
+
+// --------------------------------------------------
 // TODO: check 'type' is valid for a filename extension
 + (NSArray *)pathsForFilesType:(NSString *)type inDir:(NSString *)dirPath sortedBy:(FilesUtil_SortFilesBy)sortedBy {
 	NSMutableArray * result = nil;
 	
 	if ([type length] && [dirPath length]) {
-		if ([[NSFileManager defaultManager] fileExistsAtPath:dirPath]) {
+		BOOL isDir = NO;
+		if ([[NSFileManager defaultManager] fileExistsAtPath:dirPath isDirectory:&isDir] && isDir) {
 			NSError *error = nil;
-			// "Performs a shallow search of the specified directory ..."
 			NSArray* files = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:dirPath error:&error];
 			if (error != nil) {
 				MyLog(@"Error counting files: %@", [error localizedDescription]);
 			}
 			else {
-				//				int index = 0;
+//				int index = 0;
 				for (NSString *file in files) {
-					//					MyLog(@"%2i: '%@'", index++, file);
+//					MyLog(@"%2i: '%@'", index++, file);
 					NSString *path = [NSString pathWithComponents:@[dirPath, file]];
 					if ([[path pathExtension] isEqualToString:type]) {
 						if (result == nil)
