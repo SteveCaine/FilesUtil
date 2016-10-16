@@ -11,9 +11,9 @@
 //  Copyright (c) 2012 Erica Sadun. All rights reserved.
 //
 
-#define kDocumentChanged @"DocumentsFolderContentsDidChangeNotification"
+#import <Foundation/Foundation.h>
 
-//#import <Foundation/Foundation.h>
+#define kDocumentChanged @"DocumentsFolderContentsDidChangeNotification"
 
 @interface FolderWatcher : NSObject
 

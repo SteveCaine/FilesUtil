@@ -11,8 +11,6 @@
 
 #import "FilesUtil.h"
 
-#import "AppDelegate.h"
-
 #import "Debug_iOS.h"
 
 // --------------------------------------------------
@@ -229,10 +227,15 @@ static NSInteger sortFilesByThis(id lhs, id rhs, void *v);
 	return result;
 }
 
-// write contents of -str- to new file, replacing any preexisting, and return path to new file
-+ (NSString *)writeString:(NSString *)str toFile:(NSString *)name inFolder:(NSString *)path {
+// --------------------------------------------------
+#pragma mark -
+// --------------------------------------------------
+// write -data- to (overwriting) new file and return its path
+
++ (NSString *)writeData:(NSData *)data toFile:(NSString *)name inFolder:(NSString *)path {
 	NSString *result = nil;
 	
+	if (data.length && name.length && path.length) {
 	NSString *dst_path = [path stringByAppendingPathComponent:name];
 	BOOL exists = [[NSFileManager defaultManager] fileExistsAtPath:dst_path];
 	NSError *error = nil;
@@ -243,19 +246,38 @@ static NSInteger sortFilesByThis(id lhs, id rhs, void *v);
 		NSLog(@"Error clearing older file '%@': %@", name, error);
 	
 	else {
-		NSData *data = [str dataUsingEncoding:NSUTF8StringEncoding];
 		BOOL wrote = [[NSFileManager defaultManager] createFileAtPath:dst_path contents:data attributes:nil];
 		if (!wrote)
 			NSLog(@"Failed to write file '%@'", name);
 		else
 			result = dst_path;
 	}
+	}
 	return result;
+}
+
++ (NSString *)writeData:(NSData *)data toDocFile:(NSString *)name {
+	NSString *docsDir = [self documentsDirectory];
+	return [FilesUtil writeData:data toFile:name inFolder:docsDir];
+}
+
++ (NSString *)writeData:(NSData *)data toCacheFile:(NSString *)name {
+	NSString *cacheDir = [self cacheDirectory];
+	return [FilesUtil writeData:data toFile:name inFolder:cacheDir];
 }
 
 // --------------------------------------------------
 #pragma mark -
 // --------------------------------------------------
+// write -str- to (overwriting) new file and return its path
++ (NSString *)writeString:(NSString *)str toFile:(NSString *)name inFolder:(NSString *)path {
+	NSString *result = nil;
+	if (str.length && name.length && path.length) {
+		NSData *data = [str dataUsingEncoding:NSUTF8StringEncoding];
+		[self writeData:data toFile:name inFolder:path];
+	}
+	return result;
+}
 
 + (NSString *)writeString:(NSString *)str toDocFile:(NSString *)name {
 	NSString *docsDir = [self documentsDirectory];

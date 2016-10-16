@@ -46,6 +46,15 @@ typedef enum FilesUtil_SortFilesBys {
 // --------------------------------------------------
 // all return path to new file
 
++ (NSString *)writeData:(NSData *)data toFile:(NSString *)name inFolder:(NSString *)path;
+
++ (NSString *)writeData:(NSData *)data toDocFile:(NSString *)name;
+
++ (NSString *)writeData:(NSData *)data toCacheFile:(NSString *)name;
+
+// --------------------------------------------------
+// all return path to new file
+
 + (NSString *)writeString:(NSString *)str toFile:(NSString *)name inFolder:(NSString *)path;
 
 + (NSString *)writeString:(NSString *)str toDocFile:(NSString *)name;
