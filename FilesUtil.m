@@ -17,6 +17,13 @@
 static NSInteger sortFilesByThis(id lhs, id rhs, void *v);
 // --------------------------------------------------
 
+static NSString * const STR_ErrorDomain = @"FilesUtilErrorDomain";
+
+static NSString * const type_json  = @"json";
+static NSString * const type_plist = @"plist";
+
+// --------------------------------------------------
+
 @interface FilesUtil ()
 @end
 
@@ -26,14 +33,44 @@ static NSInteger sortFilesByThis(id lhs, id rhs, void *v);
 
 @implementation FilesUtil
 
-+ (double)ageOfFile:(NSString *)filePath error:(NSError **)error {
++ (NSError *)errorWithDescription:(NSString *)description {
+	return [self errorWithDescription:description domain:nil];
+}
+
++ (NSError *)errorWithDescription:(NSString *)description domain:(NSString *)domain {
+	NSError *result = nil;
+	
+	if (description.length) {
+		if (domain.length == 0)
+			domain = STR_ErrorDomain;
+		result = [NSError errorWithDomain:domain
+									 code:-1
+								 userInfo:@{ NSLocalizedDescriptionKey : description }];
+	}
+	return result;
+}
+
+// --------------------------------------------------
+
++ (double)ageOfFile:(NSString *)filePath error:(NSError **)outError {
 	double result = 0.0;
-	NSDictionary *attribs = [[NSFileManager defaultManager] attributesOfItemAtPath:filePath error:error];
-	if (attribs && !*error) {
+	NSError *error;
+	NSDictionary *attribs = [[NSFileManager defaultManager] attributesOfItemAtPath:filePath error:&error];
+	if (attribs && !error) {
 		NSDate *date = [attribs objectForKey:NSFileModificationDate];
 		result = -[date timeIntervalSinceNow];
 	}
+	if (outError) *outError = error;
 	return result;
+}
+
++ (BOOL)fileExists:(NSString *)path {
+	if (path.length) {
+		BOOL isDirectory;
+		BOOL found = [[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDirectory];
+		return (found && !isDirectory);
+	}
+	return NO;
 }
 
 // --------------------------------------------------
@@ -224,6 +261,90 @@ static NSInteger sortFilesByThis(id lhs, id rhs, void *v);
 			[result addObject:name];
 		}
 	}
+	return result;
+}
+
+// --------------------------------------------------
+#pragma mark -
+// --------------------------------------------------
+
++ (NSArray *)arrayFromBundle_json:(NSString *)fileName error:(NSError **)outError {
+	id obj = [self.class objFromBundle_json:fileName error:outError];
+	if ([obj isKindOfClass:NSArray.class])
+		return obj;
+	return nil;
+}
+
++ (NSDictionary *)dictionaryFromBundle_json:(NSString *)fileName error:(NSError **)outError {
+	id obj = [self.class objFromBundle_json:fileName error:outError];
+	if ([obj isKindOfClass:NSDictionary.class])
+		return obj;
+	return nil;
+}
+
+// --------------------------------------------------
+
++ (NSArray *)arrayFromBundle_plist:(NSString *)fileName {
+	NSString *path = [[NSBundle mainBundle] pathForResource:fileName ofType:type_plist];
+	NSArray *result = [NSArray arrayWithContentsOfFile:path];
+	return result;
+}
+
++ (NSDictionary *)dictionaryFromBundle_plist:(NSString *)fileName {
+	NSString *path = [[NSBundle mainBundle] pathForResource:fileName ofType:type_plist];
+	NSDictionary *result = [NSDictionary dictionaryWithContentsOfFile:path];
+	return result;
+}
+
+// --------------------------------------------------
+#pragma mark -
+// --------------------------------------------------
+
++ (id)objFromBundle_json:(NSString *)fileName error:(NSError **)outError {
+	id obj = nil;
+	
+	NSError *error = nil;
+	if (fileName.length) {
+		NSString *path = [[NSBundle mainBundle] pathForResource:fileName ofType:type_json];
+		NSData *data = [NSData dataWithContentsOfFile:path];
+		if (data && data.length) {
+			obj = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
+		}
+		else error = [self errorWithDescription:@"Failed to read file in objFromBundle_json."];
+	}
+	else error = [self errorWithDescription:@"Empty fileName in objFromBundle_json."];
+	if (outError) *outError = error;
+	return obj;
+}
+
+// --------------------------------------------------
+#pragma mark -
+// --------------------------------------------------
+
++ (BOOL)writeJson:(id)obj toFile:(NSString *)fileName inDir:(NSString *)dirPath error:(NSError **)outError {
+	BOOL result = NO;
+	
+	NSError *error = nil;
+	if (fileName.length && dirPath.length && obj != nil) {
+		if ([obj isKindOfClass:NSDictionary.class] || [obj isKindOfClass:NSArray.class]) {
+			NSData *json = [NSJSONSerialization dataWithJSONObject:obj options:0 error:&error];
+			if (json.length) {
+				NSString *path = [dirPath stringByAppendingPathComponent:fileName];
+				path = [path stringByAppendingPathExtension:type_json];
+				result = [json writeToFile:path options:0 error:&error];
+				NSLog(@"wrote JSON = %s", result ? "YES" : "NO");
+			}
+		}
+		else error = [self errorWithDescription:@"FilesUtil:writeJson can only handle dictionaries and arrays."];
+	}
+	else error = [self errorWithDescription:@"Nil file/dir/object in writeJson:"];
+	if (outError) *outError = error;
+	
+	return result;
+}
++ (BOOL)writeJson:(id)obj toDocFile:(NSString *)fileName error:(NSError **)outError {
+	BOOL result = NO;
+	result = [self writeJson:obj toFile:fileName inDir:self.documentsDirectory error:outError];
 	return result;
 }
 
