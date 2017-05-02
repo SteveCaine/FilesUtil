@@ -55,10 +55,10 @@ static NSString * const type_plist = @"plist";
 + (double)ageOfFile:(NSString *)filePath error:(NSError **)outError {
 	double result = 0.0;
 	NSError *error;
-	NSDictionary *attribs = [[NSFileManager defaultManager] attributesOfItemAtPath:filePath error:&error];
+	NSDictionary *attribs = [NSFileManager.defaultManager attributesOfItemAtPath:filePath error:&error];
 	if (attribs && !error) {
 		NSDate *date = [attribs objectForKey:NSFileModificationDate];
-		result = -[date timeIntervalSinceNow];
+		result = -date.timeIntervalSinceNow;
 	}
 	if (outError) *outError = error;
 	return result;
@@ -67,7 +67,7 @@ static NSString * const type_plist = @"plist";
 + (BOOL)fileExists:(NSString *)path {
 	if (path.length) {
 		BOOL isDirectory;
-		BOOL found = [[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDirectory];
+		BOOL found = [NSFileManager.defaultManager fileExistsAtPath:path isDirectory:&isDirectory];
 		return (found && !isDirectory);
 	}
 	return NO;
@@ -78,21 +78,21 @@ static NSString * const type_plist = @"plist";
 
 + (NSString *)documentsDirectory {
 	NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-	return [paths firstObject];
+	return paths.firstObject;
 }
 
 + (NSString *)cacheDirectory {
 	NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
-	return [paths firstObject];
+	return paths.firstObject;
 }
 
 + (NSString *)cacheSubDirectory:(NSString *)name { // name of subfolder in cache dir
 	NSString *result = nil;
 	// TODO: check name is valid for a directory
-	if ([name length]) {
+	if (name.length) {
 		NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
-		NSString *dir = [paths firstObject];
-		if ([dir length])
+		NSString *dir = paths.firstObject;
+		if (dir.length)
 			result = [dir stringByAppendingPathComponent:name];
 	}
 	return result;
@@ -113,11 +113,11 @@ static NSString * const type_plist = @"plist";
 + (NSUInteger)copyBundleFilesOfType:(NSString *)type toDir:(NSString *)dirPath overwriteExisting:(BOOL)overwriteYesNo {
 	NSUInteger result = 0;
 	
-	NSFileManager *defaultManager = [NSFileManager defaultManager];
+	NSFileManager *defaultManager = NSFileManager.defaultManager;
 	
 	NSArray *filePaths = [self pathsForBundleFilesType:type sortedBy:0]; //bundleFiles
 	for (NSString *srcPath in filePaths) {
-		NSString *srcName = [srcPath lastPathComponent];
+		NSString *srcName = srcPath.lastPathComponent;
 		NSString *dstPath = [dirPath stringByAppendingPathComponent:srcName];
 //		MyLog(@"copy \n'%@'\n to \n'%@'", srcPath, dstPath);
 		
@@ -129,13 +129,13 @@ static NSString * const type_plist = @"plist";
 		if (exists) {
 			[defaultManager removeItemAtPath:dstPath error:&error];
 			if (error) {
-				MyLog(@"Failed to delete existing file '%@': %@", srcName, [error localizedDescription]);
+				MyLog(@"Failed to delete existing file '%@': %@", srcName, error.localizedDescription);
 			}
 		}
 		if (error == nil)
 			[defaultManager copyItemAtPath:srcPath toPath:dstPath error:&error];
 		if (error) {
-			MyLog(@"Failed to copy file '%@': %@", srcName, [error localizedDescription]);
+			MyLog(@"Failed to copy file '%@': %@", srcName, error.localizedDescription);
 		}
 	}
 	
@@ -150,9 +150,9 @@ static NSString * const type_plist = @"plist";
 	
 	if (type.length && dirPath.length) {
 		BOOL isDir = NO;
-		if ([[NSFileManager defaultManager] fileExistsAtPath:dirPath isDirectory:&isDir] && isDir) {
+		if ([NSFileManager.defaultManager fileExistsAtPath:dirPath isDirectory:&isDir] && isDir) {
 			NSError *error = nil;
-			NSArray* files = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:dirPath error:&error];
+			NSArray* files = [NSFileManager.defaultManager contentsOfDirectoryAtPath:dirPath error:&error];
 			
 			if (files.count) {
 				for (NSString *file in files) {
@@ -161,7 +161,7 @@ static NSString * const type_plist = @"plist";
 				}
 			}
 			else if (error)
-				MyLog(@"Error counting files in '%@': %@", dirPath, [error localizedDescription]);
+				MyLog(@"Error counting files in '%@': %@", dirPath, error.localizedDescription);
 		}
 	}
 	return result;
@@ -172,23 +172,23 @@ static NSString * const type_plist = @"plist";
 
 	if (type.length && dirPath.length) {
 		BOOL isDir = NO;
-		if ([[NSFileManager defaultManager] fileExistsAtPath:dirPath isDirectory:&isDir] && isDir) {
+		if ([NSFileManager.defaultManager fileExistsAtPath:dirPath isDirectory:&isDir] && isDir) {
 			NSError *error = nil;
-			NSArray* files = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:dirPath error:&error];
+			NSArray* files = [NSFileManager.defaultManager contentsOfDirectoryAtPath:dirPath error:&error];
 			
 			if (files.count) {
 				for (NSString *file in files) {
 					NSString *path = [NSString pathWithComponents:@[dirPath, file]];
-					if ([[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDir] && !isDir) {
+					if ([NSFileManager.defaultManager fileExistsAtPath:path isDirectory:&isDir] && !isDir) {
 						if ([file.pathExtension isEqualToString:type] && (filter == nil || filter(file))) {
-							if ([[NSFileManager defaultManager] removeItemAtPath:path error:&error])
+							if ([NSFileManager.defaultManager removeItemAtPath:path error:&error])
 								++result;
 						}
 					}
 				}
 			}
 			else if (error)
-				MyLog(@"Error clearing files in '%@': %@", dirPath, [error localizedDescription]);
+				MyLog(@"Error clearing files in '%@': %@", dirPath, error.localizedDescription);
 		}
 	}
 	return result;
@@ -199,27 +199,27 @@ static NSString * const type_plist = @"plist";
 + (NSArray *)pathsForFilesType:(NSString *)type inDir:(NSString *)dirPath sortedBy:(FilesUtil_SortFilesBy)sortedBy {
 	NSMutableArray * result = nil;
 	
-	if ([type length] && [dirPath length]) {
+	if (type.length && dirPath.length) {
 		BOOL isDir = NO;
-		if ([[NSFileManager defaultManager] fileExistsAtPath:dirPath isDirectory:&isDir] && isDir) {
+		if ([NSFileManager.defaultManager fileExistsAtPath:dirPath isDirectory:&isDir] && isDir) {
 			NSError *error = nil;
-			NSArray* files = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:dirPath error:&error];
+			NSArray* files = [NSFileManager.defaultManager contentsOfDirectoryAtPath:dirPath error:&error];
 			if (error != nil) {
-				MyLog(@"Error counting files: %@", [error localizedDescription]);
+				MyLog(@"Error counting files: %@", error.localizedDescription);
 			}
 			else {
 //				int index = 0;
 				for (NSString *file in files) {
 //					MyLog(@"%2i: '%@'", index++, file);
 					NSString *path = [NSString pathWithComponents:@[dirPath, file]];
-					if ([[path pathExtension] isEqualToString:type]) {
+					if ([path.pathExtension isEqualToString:type]) {
 						if (result == nil)
 							result = [NSMutableArray arrayWithCapacity:1];
 						[result addObject:path];
 					}
 				}
 				//MyLog(@"%s result == %@", __FUNCTION__, [FilesUtil namesFromPaths:result stripExtensions:NO]);
-				if ([result count] > 1) {
+				if (result.count > 1) {
 					NSArray *sorted = [result sortedArrayUsingFunction:sortFilesByThis context:&sortedBy];
 					result = [NSMutableArray arrayWithArray:sorted];
 					//MyLog(@" result => %@", [FilesUtil namesFromPaths:result stripExtensions:NO]);
@@ -235,10 +235,10 @@ static NSString * const type_plist = @"plist";
 + (NSArray *)pathsForBundleFilesType:(NSString *)type sortedBy:(FilesUtil_SortFilesBy)sortedBy {
 	NSArray *result = nil;
 	
-	if ([type length]) {
-		result = [[NSBundle mainBundle] pathsForResourcesOfType:type inDirectory:nil];
+	if (type.length) {
+		result = [NSBundle.mainBundle pathsForResourcesOfType:type inDirectory:nil];
 		//MyLog(@"%s result == %@", __FUNCTION__, [FilesUtil namesFromPaths:result stripExtensions:NO]);
-		if ([result count] > 1) {
+		if (result.count > 1) {
 			result = [result sortedArrayUsingFunction:sortFilesByThis context:&sortedBy];
 			//MyLog(@" result => %@", [FilesUtil namesFromPaths:result stripExtensions:NO]);
 		}
@@ -250,10 +250,10 @@ static NSString * const type_plist = @"plist";
 
 + (NSArray *)namesFromPaths:(NSArray *)paths stripExtensions:(BOOL)stripYesNo {
 	NSMutableArray * result = nil;
-	if ([paths count]) {
+	if (paths.count) {
 		// TODO: check that each is a valid file path?
 		for (NSString *path in paths) {
-			NSString *name = [path lastPathComponent];
+			NSString *name = path.lastPathComponent;
 			if (stripYesNo)
 				name = [name stringByDeletingPathExtension];
 			if (result == nil)
@@ -285,13 +285,13 @@ static NSString * const type_plist = @"plist";
 // --------------------------------------------------
 
 + (NSArray *)arrayFromBundle_plist:(NSString *)fileName {
-	NSString *path = [[NSBundle mainBundle] pathForResource:fileName ofType:type_plist];
+	NSString *path = [NSBundle.mainBundle pathForResource:fileName ofType:type_plist];
 	NSArray *result = [NSArray arrayWithContentsOfFile:path];
 	return result;
 }
 
 + (NSDictionary *)dictionaryFromBundle_plist:(NSString *)fileName {
-	NSString *path = [[NSBundle mainBundle] pathForResource:fileName ofType:type_plist];
+	NSString *path = [NSBundle.mainBundle pathForResource:fileName ofType:type_plist];
 	NSDictionary *result = [NSDictionary dictionaryWithContentsOfFile:path];
 	return result;
 }
@@ -305,7 +305,7 @@ static NSString * const type_plist = @"plist";
 	
 	NSError *error = nil;
 	if (fileName.length) {
-		NSString *path = [[NSBundle mainBundle] pathForResource:fileName ofType:type_json];
+		NSString *path = [NSBundle.mainBundle pathForResource:fileName ofType:type_json];
 		NSData *data = [NSData dataWithContentsOfFile:path];
 		if (data && data.length) {
 			obj = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
@@ -358,16 +358,16 @@ static NSString * const type_plist = @"plist";
 	
 	if (data.length && name.length && path.length) {
 	NSString *dst_path = [path stringByAppendingPathComponent:name];
-	BOOL exists = [[NSFileManager defaultManager] fileExistsAtPath:dst_path];
+	BOOL exists = [NSFileManager.defaultManager fileExistsAtPath:dst_path];
 	NSError *error = nil;
 	if (exists) {
-		(void) [[NSFileManager defaultManager] removeItemAtPath:dst_path error:&error];
+		(void) [NSFileManager.defaultManager removeItemAtPath:dst_path error:&error];
 	}
 	if (error)
 		NSLog(@"Error clearing older file '%@': %@", name, error);
 	
 	else {
-		BOOL wrote = [[NSFileManager defaultManager] createFileAtPath:dst_path contents:data attributes:nil];
+		BOOL wrote = [NSFileManager.defaultManager createFileAtPath:dst_path contents:data attributes:nil];
 		if (!wrote)
 			NSLog(@"Failed to write file '%@'", name);
 		else
@@ -445,8 +445,8 @@ static NSInteger sortFilesByThis(id lhs, id rhs, void *v) {
 	if (sortFilesBy == SortFiles_alphabeticalAscending ||
 		sortFilesBy == SortFiles_alphabeticalDescending) {
 		
-		NSString *lhsName = [lhsPath lastPathComponent];
-		NSString *rhsName = [rhsPath lastPathComponent];
+		NSString *lhsName = lhsPath.lastPathComponent;
+		NSString *rhsName = rhsPath.lastPathComponent;
 		NSInteger result = [lhsName caseInsensitiveCompare:rhsName];
 		
 		if (sortFilesBy == SortFiles_alphabeticalAscending)
