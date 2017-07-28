@@ -395,7 +395,7 @@ static NSString * const type_plist = @"plist";
 	NSString *result = nil;
 	if (str.length && name.length && path.length) {
 		NSData *data = [str dataUsingEncoding:NSUTF8StringEncoding];
-		[self writeData:data toFile:name inFolder:path];
+		result = [self writeData:data toFile:name inFolder:path];
 	}
 	return result;
 }
