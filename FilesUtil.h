@@ -30,6 +30,9 @@ typedef enum FilesUtil_SortFilesBys {
 + (double)ageOfFile:(NSString *)path error:(NSError **)error;
 
 + (BOOL)fileExists:(NSString *)path;
++ (BOOL)clearFile:(NSString *)path error:(NSError **)outError;
+
++ (BOOL)directoryExists:(NSString *)path;
 
 // --------------------------------------------------
 // returns PATH if exists, else returns -nil-
@@ -63,14 +66,24 @@ typedef enum FilesUtil_SortFilesBys {
 // read .plist and .json files as arrays and dictionaries
 // returns nil if file is not array/dictionary as requested
 
-+ (NSArray *)          arrayFromBundle_json:(NSString *)fileName error:(NSError **)errorP;
-+ (NSDictionary *)dictionaryFromBundle_json:(NSString *)fileName error:(NSError **)errorP;
++ (NSArray *)          arrayFromBundle_json:(NSString *)fileName error:(NSError **)outError;
++ (NSDictionary *)dictionaryFromBundle_json:(NSString *)fileName error:(NSError **)outError;
 
 + (NSArray *)          arrayFromBundle_plist:(NSString *)fileName;
 + (NSDictionary *)dictionaryFromBundle_plist:(NSString *)fileName;
 
-+ (BOOL)writeJson:(id)obj toFile:(NSString *)fileName inDir:(NSString *)dirPath error:(NSError **)errorP;
-+ (BOOL)writeJson:(id)obj toDocFile:(NSString *)fileName error:(NSError **)errorP;
++ (BOOL)writeJson:(id)obj toFile:(NSString *)fileName inDir:(NSString *)dirPath error:(NSError **)outError;
++ (BOOL)writeJson:(id)obj toDocFile:(NSString *)fileName error:(NSError **)outError;
++ (BOOL)writeJson:(id)obj toCacheFile:(NSString *)fileName error:(NSError **)outError;
+
+// --------------------------------------------------
+// do same to .plist files using built-in NSArray/NSDictionary methods
+
+// TODO:? add an NSPropertyListSerialization implementation w/ more control over process?
+
++ (BOOL)writePlist:(id)obj toFile:(NSString *)fileName inDir:(NSString *)dirPath error:(NSError **)outError;
++ (BOOL)writePlist:(id)obj toDocFile:(NSString *)fileName error:(NSError **)outError;
++ (BOOL)writePlist:(id)obj toCacheFile:(NSString *)fileName error:(NSError **)outError;
 
 // --------------------------------------------------
 #pragma mark -

@@ -11,7 +11,9 @@
 
 #import "FilesUtil.h"
 
-#import "Debug_iOS.h"
+#ifndef USECUSTOMLOGS
+#	import "Debug_iOS.h"
+#endif
 
 // --------------------------------------------------
 static NSInteger sortFilesByThis(id lhs, id rhs, void *v);
@@ -19,8 +21,8 @@ static NSInteger sortFilesByThis(id lhs, id rhs, void *v);
 
 static NSString * const STR_ErrorDomain = @"FilesUtilErrorDomain";
 
-static NSString * const type_json  = @"json";
-static NSString * const type_plist = @"plist";
+static NSString * const TYPE_json  = @"json";
+static NSString * const TYPE_plist = @"plist";
 
 // --------------------------------------------------
 
@@ -51,6 +53,9 @@ static NSString * const type_plist = @"plist";
 }
 
 // --------------------------------------------------
+#pragma mark -
+// --------------------------------------------------
+// TODO: add better validation of paths, identifying file names vs dir names, etc.
 
 + (double)ageOfFile:(NSString *)filePath error:(NSError **)outError {
 	double result = 0.0;
@@ -73,6 +78,40 @@ static NSString * const type_plist = @"plist";
 	return NO;
 }
 
++ (BOOL)clearFile:(NSString *)path error:(NSError **)outError {
+	BOOL result = NO;
+	
+	NSError *error = nil;
+	if ([self fileExists:path]) {
+		if ([NSFileManager.defaultManager removeItemAtPath:path error:&error])
+			result = YES;
+		else {
+			MyLog(@"Failed to remove file '%@': %@", path, error.localizedDescription);
+			result = NO;
+		}
+	}
+	else {
+		NSString *dir = [path stringByDeletingLastPathComponent];
+		if ([self directoryExists:dir])
+			result = YES;
+	}
+	if (outError) *outError = error;
+	return result;
+}
+
+// --------------------------------------------------
+
++ (BOOL)directoryExists:(NSString *)path {
+	if (path.length) {
+		BOOL isDirectory;
+		BOOL found = [NSFileManager.defaultManager fileExistsAtPath:path isDirectory:&isDirectory];
+		return (found && isDirectory);
+	}
+	return NO;
+}
+
+// --------------------------------------------------
+#pragma mark -
 // --------------------------------------------------
 // these returns PATH if dir exists, else return -nil-
 
@@ -98,6 +137,8 @@ static NSString * const type_plist = @"plist";
 	return result;
 }
 
+// --------------------------------------------------
+#pragma mark -
 // --------------------------------------------------
 // DO overwrite existing files
 + (NSUInteger)copyBundleFilesOfType:(NSString *)type toDir:(NSString *)dirPath {
@@ -169,7 +210,7 @@ static NSString * const type_plist = @"plist";
 
 + (NSUInteger)clearFilesOfType:(NSString *)type inDir:(NSString *)dirPath filter:(BOOL(^)(NSString *))filter {
 	NSUInteger result = 0;
-
+	
 	if (type.length && dirPath.length) {
 		BOOL isDir = NO;
 		if ([NSFileManager.defaultManager fileExistsAtPath:dirPath isDirectory:&isDir] && isDir) {
@@ -194,6 +235,8 @@ static NSString * const type_plist = @"plist";
 	return result;
 }
 
+// --------------------------------------------------
+#pragma mark -
 // --------------------------------------------------
 // TODO: check 'type' is valid for a filename extension
 + (NSArray *)pathsForFilesType:(NSString *)type inDir:(NSString *)dirPath sortedBy:(FilesUtil_SortFilesBy)sortedBy {
@@ -285,13 +328,13 @@ static NSString * const type_plist = @"plist";
 // --------------------------------------------------
 
 + (NSArray *)arrayFromBundle_plist:(NSString *)fileName {
-	NSString *path = [NSBundle.mainBundle pathForResource:fileName ofType:type_plist];
+	NSString *path = [NSBundle.mainBundle pathForResource:fileName ofType:TYPE_plist];
 	NSArray *result = [NSArray arrayWithContentsOfFile:path];
 	return result;
 }
 
 + (NSDictionary *)dictionaryFromBundle_plist:(NSString *)fileName {
-	NSString *path = [NSBundle.mainBundle pathForResource:fileName ofType:type_plist];
+	NSString *path = [NSBundle.mainBundle pathForResource:fileName ofType:TYPE_plist];
 	NSDictionary *result = [NSDictionary dictionaryWithContentsOfFile:path];
 	return result;
 }
@@ -305,7 +348,7 @@ static NSString * const type_plist = @"plist";
 	
 	NSError *error = nil;
 	if (fileName.length) {
-		NSString *path = [NSBundle.mainBundle pathForResource:fileName ofType:type_json];
+		NSString *path = [NSBundle.mainBundle pathForResource:fileName ofType:TYPE_json];
 		NSData *data = [NSData dataWithContentsOfFile:path];
 		if (data && data.length) {
 			obj = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
@@ -330,12 +373,12 @@ static NSString * const type_plist = @"plist";
 			NSData *json = [NSJSONSerialization dataWithJSONObject:obj options:0 error:&error];
 			if (json.length) {
 				NSString *path = [dirPath stringByAppendingPathComponent:fileName];
-				path = [path stringByAppendingPathExtension:type_json];
+				path = [path stringByAppendingPathExtension:TYPE_json];
 				result = [json writeToFile:path options:0 error:&error];
-				NSLog(@"wrote JSON = %s", result ? "YES" : "NO");
+//				NSLog(@"wrote JSON = %s", result ? "YES" : "NO");
 			}
 		}
-		else error = [self errorWithDescription:@"FilesUtil:writeJson can only handle dictionaries and arrays."];
+		else error = [self errorWithDescription:@"FilesUtil:writeJson only supports dictionaries and arrays."];
 	}
 	else error = [self errorWithDescription:@"Nil file/dir/object in writeJson:"];
 	if (outError) *outError = error;
@@ -343,9 +386,51 @@ static NSString * const type_plist = @"plist";
 	return result;
 }
 + (BOOL)writeJson:(id)obj toDocFile:(NSString *)fileName error:(NSError **)outError {
+	return [self writeJson:obj toFile:fileName inDir:self.documentsDirectory error:outError];
+}
++ (BOOL)writeJson:(id)obj toCacheFile:(NSString *)fileName error:(NSError **)outError {
+	return [self writeJson:obj toFile:fileName inDir:self.cacheDirectory error:outError];
+}
+
+// --------------------------------------------------
+#pragma mark -
+// --------------------------------------------------
+
++ (BOOL)writePlist:(id)obj toFile:(NSString *)fileName inDir:(NSString *)dirPath error:(NSError **)outError {
 	BOOL result = NO;
-	result = [self writeJson:obj toFile:fileName inDir:self.documentsDirectory error:outError];
+	
+	NSError *error = nil;
+	
+	if (fileName.length && dirPath.length && obj != nil) {
+		if ([self directoryExists:dirPath]) {
+			NSString *path = [dirPath stringByAppendingPathComponent:fileName];
+			path = [path stringByAppendingPathExtension:TYPE_plist];
+			
+			// unnecessary? - writeToFile: apparently always overwrites existing files (iff file permissions allow)
+			if ([self clearFile:path error:&error]) {
+				if ([obj isKindOfClass:NSDictionary.class])
+					result = [((NSDictionary *)obj) writeToFile:path atomically:YES];
+				else if ([obj isKindOfClass:NSArray.class])
+					result = [((NSArray *)obj) writeToFile:path atomically:YES];
+				else
+					error = [self errorWithDescription:@"FilesUtil:writePlist only supports dictionaries and arrays."];
+			}
+			else
+				error = [self errorWithDescription:@"FilesUtil:writePlist - invalid file path."];
+		}
+		else
+			error = [self errorWithDescription:@"FilesUtil:writePlist - invalid directory."];
+	}
+	else error = [self errorWithDescription:@"Nil file/dir/object in writePlist:"];
+	if (outError) *outError = error;
+	
 	return result;
+}
++ (BOOL)writePlist:(id)obj toDocFile:(NSString *)fileName error:(NSError **)outError {
+	return [self writePlist:obj toFile:fileName inDir:self.documentsDirectory error:outError];
+}
++ (BOOL)writePlist:(id)obj toCacheFile:(NSString *)fileName error:(NSError **)outError {
+	return [self writePlist:obj toFile:fileName inDir:self.cacheDirectory error:outError];
 }
 
 // --------------------------------------------------
@@ -357,22 +442,22 @@ static NSString * const type_plist = @"plist";
 	NSString *result = nil;
 	
 	if (data.length && name.length && path.length) {
-	NSString *dst_path = [path stringByAppendingPathComponent:name];
-	BOOL exists = [NSFileManager.defaultManager fileExistsAtPath:dst_path];
-	NSError *error = nil;
-	if (exists) {
-		(void) [NSFileManager.defaultManager removeItemAtPath:dst_path error:&error];
-	}
-	if (error)
-		NSLog(@"Error clearing older file '%@': %@", name, error);
-	
-	else {
-		BOOL wrote = [NSFileManager.defaultManager createFileAtPath:dst_path contents:data attributes:nil];
-		if (!wrote)
-			NSLog(@"Failed to write file '%@'", name);
-		else
-			result = dst_path;
-	}
+		NSString *dst_path = [path stringByAppendingPathComponent:name];
+		BOOL exists = [NSFileManager.defaultManager fileExistsAtPath:dst_path];
+		NSError *error = nil;
+		if (exists) {
+			(void) [NSFileManager.defaultManager removeItemAtPath:dst_path error:&error];
+		}
+		if (error)
+			NSLog(@"Error clearing older file '%@': %@", name, error);
+		
+		else {
+			BOOL wrote = [NSFileManager.defaultManager createFileAtPath:dst_path contents:data attributes:nil];
+			if (!wrote)
+				NSLog(@"Failed to write file '%@'", name);
+			else
+				result = dst_path;
+		}
 	}
 	return result;
 }
