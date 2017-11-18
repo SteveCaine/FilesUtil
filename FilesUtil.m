@@ -388,9 +388,6 @@ static NSString * const TYPE_plist = @"plist";
 + (BOOL)writeJson:(id)obj toDocFile:(NSString *)fileName error:(NSError **)outError {
 	return [self writeJson:obj toFile:fileName inDir:self.documentsDirectory error:outError];
 }
-//+ (BOOL)writeJson:(id)obj toCacheFile:(NSString *)fileName error:(NSError **)outError {
-//	return [self writeJson:obj toFile:fileName inDir:self.cacheDirectory error:outError];
-//}
 
 // --------------------------------------------------
 #pragma mark -
@@ -429,9 +426,6 @@ static NSString * const TYPE_plist = @"plist";
 + (BOOL)writePlist:(id)obj toDocFile:(NSString *)fileName error:(NSError **)outError {
 	return [self writePlist:obj toFile:fileName inDir:self.documentsDirectory error:outError];
 }
-//+ (BOOL)writePlist:(id)obj toCacheFile:(NSString *)fileName error:(NSError **)outError {
-//	return [self writePlist:obj toFile:fileName inDir:self.cacheDirectory error:outError];
-//}
 
 // --------------------------------------------------
 #pragma mark -
@@ -465,10 +459,6 @@ static NSString * const TYPE_plist = @"plist";
 	NSString *docsDir = [self documentsDirectory];
 	return [FilesUtil writeData:data toFile:name inFolder:docsDir];
 }
-//+ (NSString *)writeData:(NSData *)data toCacheFile:(NSString *)name {
-//	NSString *cacheDir = [self cacheDirectory];
-//	return [FilesUtil writeData:data toFile:name inFolder:cacheDir];
-//}
 
 // --------------------------------------------------
 #pragma mark -
@@ -486,19 +476,12 @@ static NSString * const TYPE_plist = @"plist";
 	NSString *docsDir = [self documentsDirectory];
 	return [FilesUtil writeString:str toFile:name inFolder:docsDir];
 }
-//+ (NSString *)writeString:(NSString *)str toCacheFile:(NSString *)name {
-//	NSString *cacheDir = [self cacheDirectory];
-//	return [FilesUtil writeString:str toFile:name inFolder:cacheDir];
-//}
 
 /* TK
 + (NSString *)appendString:(NSString *)str toFile:(NSString *)name inFolder:(NSString *)path {
 	return nil;
 }
 + (NSString *)appendString:(NSString *)str toDocFile:(NSString *)name {
-	return nil;
-}
-+ (NSString *)appendString:(NSString *)str toCacheFile:(NSString *)name {
 	return nil;
 }
 */

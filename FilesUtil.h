@@ -74,7 +74,6 @@ typedef enum FilesUtil_SortFilesBys {
 
 + (BOOL)writeJson:(id)obj toFile:(NSString *)fileName inDir:(NSString *)dirPath error:(NSError **)outError;
 + (BOOL)writeJson:(id)obj toDocFile:(NSString *)fileName error:(NSError **)outError;
-//+ (BOOL)writeJson:(id)obj toCacheFile:(NSString *)fileName error:(NSError **)outError;
 
 // --------------------------------------------------
 // do same to .plist files using built-in NSArray/NSDictionary methods
@@ -83,7 +82,6 @@ typedef enum FilesUtil_SortFilesBys {
 
 + (BOOL)writePlist:(id)obj toFile:(NSString *)fileName inDir:(NSString *)dirPath error:(NSError **)outError;
 + (BOOL)writePlist:(id)obj toDocFile:(NSString *)fileName error:(NSError **)outError;
-//+ (BOOL)writePlist:(id)obj toCacheFile:(NSString *)fileName error:(NSError **)outError;
 
 // --------------------------------------------------
 #pragma mark -
@@ -94,8 +92,6 @@ typedef enum FilesUtil_SortFilesBys {
 
 + (NSString *)writeData:(NSData *)data toDocFile:(NSString *)name;
 
-//+ (NSString *)writeData:(NSData *)data toCacheFile:(NSString *)name;
-
 // --------------------------------------------------
 #pragma mark -
 // --------------------------------------------------
@@ -105,14 +101,10 @@ typedef enum FilesUtil_SortFilesBys {
 
 + (NSString *)writeString:(NSString *)str toDocFile:(NSString *)name;
 
-//+ (NSString *)writeString:(NSString *)str toCacheFile:(NSString *)name;
-
 /* TK
 + (NSString *)appendString:(NSString *)str toFile:(NSString *)name inFolder:(NSString *)path;
 
 + (NSString *)appendString:(NSString *)str toDocFile:(NSString *)name;
-
-+ (NSString *)appendString:(NSString *)str toCacheFile:(NSString *)name;
 */
 
 @end
