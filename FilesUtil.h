@@ -14,6 +14,7 @@
 // --------------------------------------------------
 
 typedef enum FilesUtil_SortFilesBys {
+	SortFiles_NO,
 	SortFiles_alphabeticalAscending,
 	SortFiles_alphabeticalDescending,
 	SortFiles_newestFirst,

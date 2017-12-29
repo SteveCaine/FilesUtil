@@ -262,7 +262,7 @@ static NSString * const TYPE_plist = @"plist";
 					}
 				}
 				//MyLog(@"%s result == %@", __FUNCTION__, [FilesUtil namesFromPaths:result stripExtensions:NO]);
-				if (result.count > 1) {
+				if (result.count > 1 && sortedBy != SortFiles_NO) {
 					NSArray *sorted = [result sortedArrayUsingFunction:sortFilesByThis context:&sortedBy];
 					result = [NSMutableArray arrayWithArray:sorted];
 					//MyLog(@" result => %@", [FilesUtil namesFromPaths:result stripExtensions:NO]);
