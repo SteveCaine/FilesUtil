@@ -369,7 +369,7 @@ static NSString * const TYPE_plist = @"plist";
 	
 	NSError *error = nil;
 	if (fileName.length && dirPath.length && obj != nil) {
-		if ([obj isKindOfClass:NSDictionary.class] || [obj isKindOfClass:NSArray.class]) {
+		if ([NSJSONSerialization isValidJSONObject:obj]) {
 			NSData *json = [NSJSONSerialization dataWithJSONObject:obj options:0 error:&error];
 			if (json.length) {
 				NSString *path = [dirPath stringByAppendingPathComponent:fileName];
@@ -378,7 +378,7 @@ static NSString * const TYPE_plist = @"plist";
 //				NSLog(@"wrote JSON = %s", result ? "YES" : "NO");
 			}
 		}
-		else error = [self errorWithDescription:@"FilesUtil:writeJson only supports dictionaries and arrays."];
+		else error = [self errorWithDescription:@"FilesUtil:writeJson - object not valid for JSON export."];
 	}
 	else error = [self errorWithDescription:@"Nil file/dir/object in writeJson:"];
 	if (outError) *outError = error;
