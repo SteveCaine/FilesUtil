@@ -370,7 +370,12 @@ static NSString * const TYPE_plist = @"plist";
 	NSError *error = nil;
 	if (fileName.length && dirPath.length && obj != nil) {
 		if ([NSJSONSerialization isValidJSONObject:obj]) {
-			NSData *json = [NSJSONSerialization dataWithJSONObject:obj options:0 error:&error];
+			
+			NSJSONWritingOptions options = 0;
+#if DEBUG
+			options = NSJSONWritingPrettyPrinted;
+#endif
+			NSData *json = [NSJSONSerialization dataWithJSONObject:obj options:options error:&error];
 			if (json.length) {
 				NSString *path = [dirPath stringByAppendingPathComponent:fileName];
 				path = [path stringByAppendingPathExtension:TYPE_json];
