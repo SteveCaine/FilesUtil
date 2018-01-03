@@ -351,7 +351,11 @@ static NSString * const TYPE_plist = @"plist";
 		NSString *path = [NSBundle.mainBundle pathForResource:fileName ofType:TYPE_json];
 		NSData *data = [NSData dataWithContentsOfFile:path];
 		if (data && data.length) {
-			obj = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
+			@try {
+				obj = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
+			} @catch (NSException *exception) {
+				if (error == nil) error = [self errorWithDescription:exception.reason];
+			}
 		}
 		else error = [self errorWithDescription:@"Failed to read file in objFromBundle_json."];
 	}
