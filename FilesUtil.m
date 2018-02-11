@@ -262,7 +262,7 @@ static NSString * const TYPE_plist = @"plist";
 					}
 				}
 				//MyLog(@"%s result == %@", __FUNCTION__, [FilesUtil namesFromPaths:result stripExtensions:NO]);
-				if (result.count > 1) {
+				if (result.count > 1 && sortedBy != SortFiles_NO) {
 					NSArray *sorted = [result sortedArrayUsingFunction:sortFilesByThis context:&sortedBy];
 					result = [NSMutableArray arrayWithArray:sorted];
 					//MyLog(@" result => %@", [FilesUtil namesFromPaths:result stripExtensions:NO]);
@@ -351,7 +351,11 @@ static NSString * const TYPE_plist = @"plist";
 		NSString *path = [NSBundle.mainBundle pathForResource:fileName ofType:TYPE_json];
 		NSData *data = [NSData dataWithContentsOfFile:path];
 		if (data && data.length) {
-			obj = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
+			@try {
+				obj = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
+			} @catch (NSException *exception) {
+				if (error == nil) error = [self errorWithDescription:exception.reason];
+			}
 		}
 		else error = [self errorWithDescription:@"Failed to read file in objFromBundle_json."];
 	}
@@ -370,7 +374,11 @@ static NSString * const TYPE_plist = @"plist";
 	NSError *error = nil;
 	if (fileName.length && dirPath.length && obj != nil) {
 		if ([NSJSONSerialization isValidJSONObject:obj]) {
-			NSData *json = [NSJSONSerialization dataWithJSONObject:obj options:0 error:&error];
+			NSJSONWritingOptions options = 0;
+#if DEBUG
+			options = NSJSONWritingPrettyPrinted;
+#endif
+			NSData *json = [NSJSONSerialization dataWithJSONObject:obj options:options error:&error];
 			if (json.length) {
 				NSString *path = [dirPath stringByAppendingPathComponent:fileName];
 				path = [path stringByAppendingPathExtension:TYPE_json];
