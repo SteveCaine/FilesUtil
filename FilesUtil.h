@@ -64,6 +64,13 @@ typedef enum FilesUtil_SortFilesBys {
 // --------------------------------------------------
 #pragma mark -
 // --------------------------------------------------
+// include filename extension
+
+- (NSData *)dataFromBundleFile:(NSString *)fileName;
+
+// --------------------------------------------------
+#pragma mark -
+// --------------------------------------------------
 // read .plist and .json files as arrays and dictionaries
 // returns nil if file is not array/dictionary as requested
 

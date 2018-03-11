@@ -311,6 +311,19 @@ static NSString * const TYPE_plist = @"plist";
 #pragma mark -
 // --------------------------------------------------
 
+- (NSData *)dataFromBundleFile:(NSString *)fileName {
+	if (fileName.length) {
+		NSString *path = [NSBundle.mainBundle pathForResource:fileName ofType:nil];
+		NSData *data = [NSData dataWithContentsOfFile:path];
+		return data;
+	}
+	return nil;
+}
+
+// --------------------------------------------------
+#pragma mark -
+// --------------------------------------------------
+
 + (NSArray *)arrayFromBundle_json:(NSString *)fileName error:(NSError **)outError {
 	id obj = [self.class objFromBundle_json:fileName error:outError];
 	if ([obj isKindOfClass:NSArray.class])
