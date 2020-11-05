@@ -18,7 +18,9 @@ typedef enum FilesUtil_SortFilesBys {
 	SortFiles_alphabeticalAscending,
 	SortFiles_alphabeticalDescending,
 	SortFiles_newestFirst,
-	SortFiles_oldestFirst
+	SortFiles_oldestFirst,
+	SortFiles_largestFirst,
+	SortFiles_smallestFirst
 } FilesUtil_SortFilesBy;
 
 // --------------------------------------------------
@@ -28,10 +30,12 @@ typedef enum FilesUtil_SortFilesBys {
 + (NSError *)errorWithDescription:(NSString *)description;
 + (NSError *)errorWithDescription:(NSString *)description domain:(NSString *)domain;
 
-+ (double)ageOfFile:(NSString *)path error:(NSError **)error;
++ (NSDate *)		  dateOfFile:(NSString *)path error:(NSError **)error;
++ (NSTimeInterval)	   ageOfFile:(NSString *)path error:(NSError **)error;
++ (unsigned long long)sizeOfFile:(NSString *)path error:(NSError **)outError;
 
 + (BOOL)fileExists:(NSString *)path;
-+ (BOOL)clearFile:(NSString *)path error:(NSError **)outError;
++ (BOOL) clearFile:(NSString *)path error:(NSError **)outError;
 
 + (BOOL)directoryExists:(NSString *)path;
 
@@ -40,13 +44,14 @@ typedef enum FilesUtil_SortFilesBys {
 + (NSString *)documentsDirectory;
 + (NSString *)cacheDirectory;
 + (NSString *)cacheSubDirectory:(NSString *)name; // name of subfolder in cache dir
++ (NSString *)tempDirectory;
 
 // --------------------------------------------------
 #pragma mark -
 // --------------------------------------------------
 
-+ (NSUInteger) copyBundleFilesOfType:(NSString *)type   toDir:(NSString *)dirPath;
-+ (NSUInteger)mergeBundleFilesOfType:(NSString *)type intoDir:(NSString *)dirPath;
++ (NSUInteger) copyBundleFilesOfType:(NSString *)type   toDir:(NSString *)path; // overwrites existing files
++ (NSUInteger)mergeBundleFilesOfType:(NSString *)type intoDir:(NSString *)path; // leaves existing files unchanged
 
 // --------------------------------------------------
 
@@ -61,6 +66,8 @@ typedef enum FilesUtil_SortFilesBys {
 
 + (NSArray *)namesFromPaths:(NSArray *)paths stripExtensions:(BOOL)stripYesNo;
 
++ (NSArray *)pathsForNames:(NSArray *)names inDir:(NSString *)path;
+
 // --------------------------------------------------
 #pragma mark -
 // --------------------------------------------------
@@ -73,23 +80,36 @@ typedef enum FilesUtil_SortFilesBys {
 // --------------------------------------------------
 // read .plist and .json files as arrays and dictionaries
 // returns nil if file is not array/dictionary as requested
+// --------------------------------------------------
+// NOTE: bundle file names EXCLUDE ".plist"/".json" extension
 
-+ (NSArray *)          arrayFromBundle_json:(NSString *)fileName error:(NSError **)outError;
-+ (NSDictionary *)dictionaryFromBundle_json:(NSString *)fileName error:(NSError **)outError;
++ (NSArray *)          arrayFromBundle_plist:(NSString *)name error:(NSError **)outError;
++ (NSDictionary *)dictionaryFromBundle_plist:(NSString *)name error:(NSError **)outError;
+// --------------------------------------------------
++ (NSArray *)          arrayFromBundle_json:(NSString *)name error:(NSError **)outError;
++ (NSDictionary *)dictionaryFromBundle_json:(NSString *)name error:(NSError **)outError;
 
-+ (NSArray *)          arrayFromBundle_plist:(NSString *)fileName;
-+ (NSDictionary *)dictionaryFromBundle_plist:(NSString *)fileName;
+// --------------------------------------------------
+// NOTE: file paths INCLUDE ".plist"/".json" extension
 
-+ (BOOL)writeJson:(id)obj toFile:(NSString *)fileName inDir:(NSString *)dirPath error:(NSError **)outError;
-+ (BOOL)writeJson:(id)obj toDocFile:(NSString *)fileName error:(NSError **)outError;
++ (NSArray *)          arrayFromFilePath_json:(NSString *)path error:(NSError **)outError;
++ (NSDictionary *)dictionaryFromFilePath_json:(NSString *)path error:(NSError **)outError;
+
++ (NSArray *)          arrayFromFileURL_json:(NSURL *)url error:(NSError **)outError;
++ (NSDictionary *)dictionaryFromFileURL_json:(NSURL *)url error:(NSError **)outError;
+
+// --------------------------------------------------
+
++ (BOOL)writeJson:(id)obj toFile:(NSString *)name inDir:(NSString *)path error:(NSError **)outError;
++ (BOOL)writeJson:(id)obj toDocFile:(NSString *)name error:(NSError **)outError;
 
 // --------------------------------------------------
 // do same to .plist files using built-in NSArray/NSDictionary methods
 
 // TODO:? add an NSPropertyListSerialization implementation w/ more control over process?
 
-+ (BOOL)writePlist:(id)obj toFile:(NSString *)fileName inDir:(NSString *)dirPath error:(NSError **)outError;
-+ (BOOL)writePlist:(id)obj toDocFile:(NSString *)fileName error:(NSError **)outError;
++ (BOOL)writePlist:(id)obj toFile:(NSString *)name inDir:(NSString *)path error:(NSError **)outError;
++ (BOOL)writePlist:(id)obj toDocFile:(NSString *)name error:(NSError **)outError;
 
 // --------------------------------------------------
 #pragma mark -
@@ -108,6 +128,9 @@ typedef enum FilesUtil_SortFilesBys {
 + (NSString *)writeString:(NSString *)str toFile:(NSString *)name inFolder:(NSString *)path;
 
 + (NSString *)writeString:(NSString *)str toDocFile:(NSString *)name;
+
+// adds date as prefix to file
++ (NSString *)writeString:(NSString *)str toDocFile:(NSString *)name withDate:(NSDate *)date;
 
 /* TK
 + (NSString *)appendString:(NSString *)str toFile:(NSString *)name inFolder:(NSString *)path;

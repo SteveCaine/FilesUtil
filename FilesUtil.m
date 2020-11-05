@@ -57,17 +57,47 @@ static NSString * const TYPE_plist = @"plist";
 // --------------------------------------------------
 // TODO: add better validation of paths, identifying file names vs dir names, etc.
 
-+ (double)ageOfFile:(NSString *)filePath error:(NSError **)outError {
-	double result = 0.0;
++ (NSDate *)dateOfFile:(NSString *)filePath error:(NSError **)outError {
+	if (outError) *outError = nil;
+	NSDate *result = nil;
+	
 	NSError *error;
 	NSDictionary *attribs = [NSFileManager.defaultManager attributesOfItemAtPath:filePath error:&error];
-	if (attribs && !error) {
-		NSDate *date = [attribs objectForKey:NSFileModificationDate];
-		result = -date.timeIntervalSinceNow;
+	if (error == nil && attribs) {
+		result = [attribs objectForKey:NSFileModificationDate];
 	}
 	if (outError) *outError = error;
 	return result;
 }
+
+// --------------------------------------------------
+
++ (double)ageOfFile:(NSString *)filePath error:(NSError **)outError {
+	double result = 0.0;
+	
+	NSError *error;
+	NSDate *date = [self dateOfFile:filePath error:&error];
+	if (error == nil && date)
+		result = -date.timeIntervalSinceNow;
+	if (outError) *outError = error;
+	return result;
+}
+
+// --------------------------------------------------
+
++ (unsigned long long)sizeOfFile:(NSString *)filePath error:(NSError **)outError {
+	unsigned long long result = 0;
+	NSError *error;
+	NSDictionary *attribs = [NSFileManager.defaultManager attributesOfItemAtPath:filePath error:&error];
+	if (attribs && !error) {
+		NSNumber *size = [attribs objectForKey:NSFileSize];
+		result = size.unsignedLongLongValue;
+	}
+	if (outError) *outError = error;
+	return result;
+}
+
+// --------------------------------------------------
 
 + (BOOL)fileExists:(NSString *)path {
 	if (path.length) {
@@ -137,6 +167,10 @@ static NSString * const TYPE_plist = @"plist";
 	return result;
 }
 
++ (NSString *)tempDirectory {
+	return NSTemporaryDirectory();
+}
+
 // --------------------------------------------------
 #pragma mark -
 // --------------------------------------------------
@@ -178,6 +212,8 @@ static NSString * const TYPE_plist = @"plist";
 		if (error) {
 			MyLog(@"Failed to copy file '%@': %@", srcName, error.localizedDescription);
 		}
+		else
+			++result;
 	}
 	
 	return result;
@@ -308,6 +344,21 @@ static NSString * const TYPE_plist = @"plist";
 }
 
 // --------------------------------------------------
+// TODO: check that dirPath is valid?
+
++ (NSArray *)pathsForNames:(NSArray *)names inDir:(NSString *)dirPath {
+	NSMutableArray *result = @[].mutableCopy;
+	if (names.count && dirPath.length) {
+		for (NSString *name in names) {
+			NSString *path = [dirPath stringByAppendingPathComponent:name];
+			// TODO: check that files exist?
+			[result addObject:path];
+		}
+	}
+	return (result.count ? result.copy : nil);
+}
+
+// --------------------------------------------------
 #pragma mark -
 // --------------------------------------------------
 
@@ -324,32 +375,92 @@ static NSString * const TYPE_plist = @"plist";
 #pragma mark -
 // --------------------------------------------------
 
++ (NSArray *)arrayFromBundle_plist:(NSString *)fileName error:(NSError **)outError {
+	if (outError) *outError = nil;
+	
+	NSString *path = [NSBundle.mainBundle pathForResource:fileName ofType:TYPE_plist];
+	NSArray *result = [NSArray arrayWithContentsOfFile:path];
+	if (result == nil && path.length && outError)
+		*outError = [FilesUtil errorWithDescription:@".plist object is not an array."];
+	return result;
+}
+
+// --------------------------------------------------
+
++ (NSDictionary *)dictionaryFromBundle_plist:(NSString *)fileName error:(NSError **)outError {
+	if (outError) *outError = nil;
+	
+	NSString *path = [NSBundle.mainBundle pathForResource:fileName ofType:TYPE_plist];
+#if DEBUG // KLUDGE to return non-opaque dictionary (for debugging)
+	NSDictionary *d_plist = [NSDictionary dictionaryWithContentsOfFile:path];
+	NSDictionary *result = (d_plist ? [NSDictionary dictionaryWithDictionary:d_plist] : nil);
+#else
+	NSDictionary *result = [NSDictionary dictionaryWithContentsOfFile:path];
+#endif
+	if (result == nil && path.length && outError)
+		*outError = [FilesUtil errorWithDescription:@".plist object is not an dictionary."];
+	return result;
+}
+
+// --------------------------------------------------
+
 + (NSArray *)arrayFromBundle_json:(NSString *)fileName error:(NSError **)outError {
+	if (outError) *outError = nil;
+	
 	id obj = [self.class objFromBundle_json:fileName error:outError];
+	if ([obj isKindOfClass:NSArray.class])
+		return obj;
+	else if (outError && *outError == nil)
+		*outError = [self errorWithDescription:@"JSON object is not array."];
+	return nil;
+}
+
+// --------------------------------------------------
+
++ (NSDictionary *)dictionaryFromBundle_json:(NSString *)fileName error:(NSError **)outError {
+	if (outError) *outError = nil;
+	
+	id obj = [self.class objFromBundle_json:fileName error:outError];
+	if ([obj isKindOfClass:NSDictionary.class])
+		return obj;
+	else if (outError && *outError == nil)
+		*outError = [self errorWithDescription:@"JSON object is not dictionary."];
+	return nil;
+}
+
+// --------------------------------------------------
+#pragma mark -
+// --------------------------------------------------
+
++ (NSArray *)arrayFromFilePath_json:(NSString *)path error:(NSError **)outError {
+	id obj = [self.class objectFromFilePath_json:path error:outError];
 	if ([obj isKindOfClass:NSArray.class])
 		return obj;
 	return nil;
 }
 
-+ (NSDictionary *)dictionaryFromBundle_json:(NSString *)fileName error:(NSError **)outError {
-	id obj = [self.class objFromBundle_json:fileName error:outError];
++ (NSDictionary *)dictionaryFromFilePath_json:(NSString *)path error:(NSError **)outError {
+	id obj = [self.class objectFromFilePath_json:path error:outError];
 	if ([obj isKindOfClass:NSDictionary.class])
 		return obj;
 	return nil;
 }
 
 // --------------------------------------------------
+#pragma mark -
+// --------------------------------------------------
 
-+ (NSArray *)arrayFromBundle_plist:(NSString *)fileName {
-	NSString *path = [NSBundle.mainBundle pathForResource:fileName ofType:TYPE_plist];
-	NSArray *result = [NSArray arrayWithContentsOfFile:path];
-	return result;
++ (NSArray *)arrayFromFileURL_json:(NSURL *)fileURL error:(NSError **)outError {
+	id obj = [self.class objectFromFileURL_json:fileURL error:outError];
+	if ([obj isKindOfClass:NSArray.class])
+		return obj;
+	return nil;
 }
-
-+ (NSDictionary *)dictionaryFromBundle_plist:(NSString *)fileName {
-	NSString *path = [NSBundle.mainBundle pathForResource:fileName ofType:TYPE_plist];
-	NSDictionary *result = [NSDictionary dictionaryWithContentsOfFile:path];
-	return result;
++ (NSDictionary *)dictionaryFromFileURL_json:(NSURL *)fileURL error:(NSError **)outError {
+	id obj = [self.class objectFromFileURL_json:fileURL error:outError];
+	if ([obj isKindOfClass:NSDictionary.class])
+		return obj;
+	return nil;
 }
 
 // --------------------------------------------------
@@ -357,6 +468,7 @@ static NSString * const TYPE_plist = @"plist";
 // --------------------------------------------------
 
 + (id)objFromBundle_json:(NSString *)fileName error:(NSError **)outError {
+	if (outError) *outError = nil;
 	id obj = nil;
 	
 	NSError *error = nil;
@@ -370,9 +482,48 @@ static NSString * const TYPE_plist = @"plist";
 				if (error == nil) error = [self errorWithDescription:exception.reason];
 			}
 		}
-		else error = [self errorWithDescription:@"Failed to read file in objFromBundle_json."];
+//		else error = [self errorWithDescription:@"Failed to read file in objFromBundle_json."];
+		else error = [self errorWithDescription:
+					  [NSString stringWithFormat:@"Failed to read file '%@' in objFromBundle_json.", fileName]
+					  ];
 	}
 	else error = [self errorWithDescription:@"Empty fileName in objFromBundle_json."];
+	if (outError) *outError = error;
+	return obj;
+}
+
++ (id)objectFromFilePath_json:(NSString *)path error:(NSError **)outError {
+	id obj = nil;
+	
+	NSError *error = nil;
+	if (path.length) {
+		NSURL *fileURL = [NSURL fileURLWithPath:path isDirectory:NO];
+		if (fileURL == nil)
+			MyLog(@" nil URL for file '%@'", fileURL.path.lastPathComponent);
+		obj = [self objectFromFileURL_json:fileURL error:&error];
+	}
+	else error = [self errorWithDescription:@"Empty path in objFromFilePath_json."];
+	if (outError) *outError = error;
+	return obj;
+}
+
++ (id)objectFromFileURL_json:(NSURL *)fileURL error:(NSError **)outError {
+	id obj = nil;
+	
+	NSError *error = nil;
+	if (fileURL) {
+		NSData *data = [NSData dataWithContentsOfURL:fileURL options:0 error:&error];
+		if (data.length) {
+			@try {
+				obj = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
+			} @catch (NSException *exception) {
+				if (error == nil) error = [self errorWithDescription:exception.reason];
+			}
+		}
+		else if (error == nil)
+			error = [self errorWithDescription:@"Failed to read file in objectFromFileURL_json."];
+	}
+	else error = [self errorWithDescription:@"Nil fileURL in objFromFileURL_json."];
 	if (outError) *outError = error;
 	return obj;
 }
@@ -382,6 +533,7 @@ static NSString * const TYPE_plist = @"plist";
 // --------------------------------------------------
 
 + (BOOL)writeJson:(id)obj toFile:(NSString *)fileName inDir:(NSString *)dirPath error:(NSError **)outError {
+	if (outError) *outError = nil;
 	BOOL result = NO;
 	
 	NSError *error = nil;
@@ -415,6 +567,7 @@ static NSString * const TYPE_plist = @"plist";
 // --------------------------------------------------
 
 + (BOOL)writePlist:(id)obj toFile:(NSString *)fileName inDir:(NSString *)dirPath error:(NSError **)outError {
+	if (outError) *outError = nil;
 	BOOL result = NO;
 	
 	NSError *error = nil;
@@ -467,6 +620,8 @@ static NSString * const TYPE_plist = @"plist";
 			NSLog(@"Error clearing older file '%@': %@", name, error);
 		
 		else {
+			// "If a file already exists at path, this method overwrites the contents of that file
+			//  if the current process has the appropriate privileges to do so."
 			BOOL wrote = [NSFileManager.defaultManager createFileAtPath:dst_path contents:data attributes:nil];
 			if (!wrote)
 				NSLog(@"Failed to write file '%@'", name);
@@ -498,6 +653,15 @@ static NSString * const TYPE_plist = @"plist";
 	return [FilesUtil writeString:str toFile:name inFolder:docsDir];
 }
 
++ (NSString *)writeString:(NSString *)str toDocFile:(NSString *)name withDate:(NSDate *)date {
+	if (date) {
+		NSString *prefix = [self.date2name_Formatter stringFromDate:date];
+		NSString *date_name = [NSString stringWithFormat:@"%@ %@", prefix, name];
+		return [self writeString:str toDocFile:date_name];
+	}
+	return nil;
+}
+
 /* TK
 + (NSString *)appendString:(NSString *)str toFile:(NSString *)name inFolder:(NSString *)path {
 	return nil;
@@ -506,6 +670,23 @@ static NSString * const TYPE_plist = @"plist";
 	return nil;
 }
 */
+
+// --------------------------------------------------
+#pragma mark -
+// --------------------------------------------------
+
++ (NSDateFormatter *)date2name_Formatter {
+	static NSDateFormatter *formatter;
+	
+	static dispatch_once_t onceToken;
+	dispatch_once(&onceToken, ^{
+		formatter = [[NSDateFormatter alloc] init];
+		// ex. "31 Jan 21.09.35 <name>"
+		formatter.dateFormat = @"dd MMM HH.mm.ss"; // no colons in file names
+	});
+	
+	return formatter;
+}
 
 @end
 
@@ -548,6 +729,18 @@ static NSInteger sortFilesByThis(id lhs, id rhs, void *v) {
 		else
 			if (rhsAge < lhsAge)
 				return (sortFilesBy == SortFiles_newestFirst) ? +1 : -1;
+	}
+	else if (sortFilesBy == SortFiles_largestFirst ||
+			 sortFilesBy == SortFiles_smallestFirst) {
+		// TODO: handle errors
+		unsigned long long lhsSize = [FilesUtil sizeOfFile:lhsPath error:&lhsError];
+		unsigned long long rhsSize = [FilesUtil sizeOfFile:rhsPath error:&rhsError];
+		
+		if (lhsSize < rhsSize)
+			return (sortFilesBy == SortFiles_smallestFirst) ? -1 : +1;
+		else
+			if (rhsSize < lhsSize)
+				return (sortFilesBy == SortFiles_smallestFirst) ? +1 : -1;
 	}
 	
 	return 0;
